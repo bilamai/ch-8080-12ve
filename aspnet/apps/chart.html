@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script>
+       
+        const smonth = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        var month = new Array();
+        function add_month() {
+            for (i = 0; i <12; i++) {
+                month.push({ month:  smonth[i] });
+            }
+        }
+
+        var dsa_sales = null;
+        function ds_sales() {
+            var ds =
+            {
+                datatype: "json",
+                datafields: [
+                    { name: 'month', type: 'number' },
+                    { name: 'salesman', type: 'string' },
+                    { name: 'addval', type: 'string' },
+                ],
+                localdata: null
+            }
+            return ds;
+        }
+
+        function add_column_series() {
+            var records = dsa_sales.records;
+            var seriesGroup = new Array();
+            for (var i = 0; i < records.length; i++) {
+                var val = records[i].addval.split(",");
+                var source = new Array();
+                for (var j = 0; j < 12; j++) {
+                    var sval = parseFloat(val[j]);
+                    if (isNaN(sval)) { sval = 0; }
+                    source.push({ value: sval });
+                }
+
+                seriesGroup.push({
+                    type: 'stackedline',
+                    source: source,
+                    series: [{ dataField: "value", displayText: records[i]["salesman"] }]
+                });
+            }
+            return seriesGroup;
+        }
+
+        function init() {
+            // prepare jqxChart settings
+            var settings = {
+                title: "Sales Monthly Report",
+                description: "Salesman",
+                enableAnimations: true,
+                showLegend: true,
+                padding: { left: 5, top: 5, right: 40, bottom: 5 },
+                titlePadding: { left: 90, top: 0, right: 0, bottom: 10 },
+                source: month,
+                xAxis:
+                {
+                    dataField: 'month',
+                    gridLines: { visible: true }
+                },
+                colorScheme: 'scheme02',
+                valueAxis:
+                {
+                    visible: true,
+                    title: { text: 'Amount' }
+                },
+                seriesGroups: add_column_series(),
+            };
+
+            $('#jqxChart').jqxChart(settings);
+        }
+
+        function load_data() {
+            var svc = new mas;
+            svc.get_salesman(connectString, onSuccess, onFail, null);
+            function onSuccess(result) {
+                $("#info_msg").text("");
+                if (result[0] == "*") {
+                    message_info_dialog(result);
+                    return;
+                }
+               
+                var ds = new ds_sales();
+                ds.localdata = result;
+                dsa_sales = new $.jqx.dataAdapter(ds);
+                dsa_sales.dataBind();
+                
+                var records = dsa_sales.records;
+             
+                if (records.length > 0) {
+                    init();
+                } 
+            }
+
+            function onFail(result) {
+                $("#info_mode").text("");
+                message_info_dialog(result);
+            }
+        }
+            
+       add_month();
+       load_data();
+
+    </script>
+</head>
+<body class='default'>
+    <div style='height: 600px; width: 682px;'>
+        <div id='host' style="margin: 0 auto; width: 850px; height: 400px;">
+            <div id='jqxChart' style="width: 850px; height: 400px; position: relative; left: 0px; top: 0px;">
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
